@@ -28,7 +28,7 @@ FONT_COLOR = (119, 110, 101)
 WINDOW = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("2048")
 
-FONT = pygame.font.SysFont("ClearSansBold", 60, bold=True)
+FONT = pygame.font.SysFont("comicsans", 50, bold=True)
 MOVE_VELOCITY = 20
 
 #High score is saved locally in a text file and if the score is higher than the high score, it is updated
@@ -36,7 +36,7 @@ def draw_score(window, high_score):
     pass
 
 class Tile:
-    #Colors for each tile value, starting from values 2 to 1024
+    #Colors for each tile value, starting from values 2 to 2048
     COLORS = [
     (237, 229, 218),
     (238, 225, 201),
@@ -48,6 +48,7 @@ class Tile:
     (237, 204, 99),
     (236, 202, 80),
     (237, 197, 63),
+    (237, 197, 63)
     ]
 
     #Each tile contains its value and its position in the grid
@@ -70,7 +71,8 @@ class Tile:
         pygame.draw.rect(window, color, (self.x, self.y, RECT_WIDTH, RECT_HEIGHT))
 
         text = FONT.render(str(self.value), 1, FONT_COLOR)
-        window.blit()
+        #Text is drawn on the rectangle and centered
+        window.blit(text, (self.x + (RECT_WIDTH / 2 - text.get_width() / 2), self.y + (RECT_HEIGHT / 2 - text.get_height() / 2)))
 
     def set_position(self, row, col):
         self.row = row
@@ -97,15 +99,39 @@ def draw_grid(window):
     # Outer outline
     pygame.draw.rect(window, OUTLINE_COLOR, (GRID_X, GRID_Y, GRID_WIDTH, GRID_HEIGHT), OUTLINE_THICKNESS)
 
-
-def draw(window):
+#Displays the UI
+def draw(window, tiles):
     window.fill(BACKGROUND_COLOR)
+    for tile in tiles.values():
+        tile.draw(window)
+    
     draw_grid(window)
-
     pygame.display.update()
 
+#used in the generate_tiles function to generate random available positions for the tiles
+def gen_random_position(tiles):
+    while True:
+        row = random.randrange(0, ROWS)
+        col = random.randrange(0, COLS)
+        #Checking if the tile already exists in the dictionary 
+        #fString is used to convert the ints into strings
+        if f"{row}{col}" not in tiles:
+            break
 
+    return row, col
 
+def generate_tiles():
+    #Dictionary to hold the tiles in the grid
+    #The first digit in the key is the row and the second digit represents the column
+    #Dictionary is used for instant access to tiles based on their position, rather than looping a 2D array or list
+    tiles = {}
+    #Underscore is used to indicate that the value is not used
+    #simply loops twice to create two tiles
+    for _ in range(2):
+        row, col = gen_random_position(tiles)
+        tiles[f"{row}{col}"] = Tile(2, row, col)
+
+    return tiles
 
 #Main game loop
 def main(window):
@@ -113,6 +139,8 @@ def main(window):
     clock = pygame.time.Clock()
     run = True
 
+    #Generating the tiles at the start of the game
+    tiles = generate_tiles()
     while run:
         #Loop is limited to 60 FPS or updates per second
         clock.tick(FPS)
@@ -122,7 +150,7 @@ def main(window):
                 run = False
                 break
         
-        draw(window)
+        draw(window, tiles)
     #Quits the game if the user closes the window
     pygame.quit()
 
