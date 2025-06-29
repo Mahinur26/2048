@@ -84,16 +84,19 @@ class Tile:
     def set_position(self, ceil=False):
         if ceil:
             #Rounds up the value 
-            self.row = math.ceil(self.y / RECT_HEIGHT) 
-            self.row = math.ceil(self.x / RECT_WIDTH)
+            self.row = math.ceil((self.y - GRID_Y) / RECT_HEIGHT)
+            self.col = math.ceil((self.x - GRID_X) / RECT_WIDTH)
         else:
             #Rounds down the value
-            self.row = math.floor(self.y / RECT_HEIGHT) 
-            self.row = math.floor(self.x / RECT_WIDTH)
+            self.row = math.floor((self.y - GRID_Y) / RECT_HEIGHT)
+            self.col = math.floor((self.x - GRID_X) / RECT_WIDTH)
 
     def move(self,delta):
         self.x += delta[0]
         self.y += delta[1]
+        #Clamp to grid boundaries
+        self.x = max(GRID_X, min(self.x, GRID_X + (COLS - 1) * RECT_WIDTH))
+        self.y = max(GRID_Y, min(self.y, GRID_Y + (ROWS - 1) * RECT_HEIGHT))
 
 #Drawing the grid and background
 def draw_grid(window):
@@ -159,7 +162,7 @@ def mov_tiles(window, tiles, clock, direction):
         reverse = False
         delta = (-MOVE_VELOCITY,0)
         #If col is 0, then it can't move left
-        boundary_check = lambda tile: tile.col == 0
+        boundary_check = lambda tile: tile.col == 0 and tile.x <= GRID_X
         get_next_tile = lambda tile: tiles.get(f"{tile.row}{tile.col - 1}")
         #The move velocity will start at 20 and then go to 0, which will allow for the tile to merge when both tiles overlap
         merge_check = lambda tile, next_tile: tile.x > next_tile.x + MOVE_VELOCITY
@@ -168,10 +171,11 @@ def mov_tiles(window, tiles, clock, direction):
         move_check = lambda tile, next_tile: tile.x > next_tile.x + RECT_WIDTH + MOVE_VELOCITY
         ceil = True
     elif direction == "right":
+        pass
         #If col is 3, then it can't move right
         boundary_check = lambda tile: tile.col == 3
         get_next_tile = lambda tile: tiles.get(f"{tile.row}{tile.col +1}")
-        pass
+        
     elif direction == "up":
         pass
     elif direction == "down":
@@ -217,13 +221,27 @@ def mov_tiles(window, tiles, clock, direction):
             updated = True
         
         update_tiles(window, tiles, sorted_tiles)
+    end_move(tiles)
 
-#FINISH THIS FUNCTION
-def update_tiles(window, tiles, sorted_tiles):
+def end_move(tiles):
+    if len(tiles) == 16:
+        #load_lost_screen(WINDOW)
+        return "Lost"
+    else:
+        row, col = gen_random_position(tiles)
+        tiles[f"{row}{col}"] = Tile(random.choice([2,4]), row, col)
+        return "continue"
+
+def load_lost_screen(window):
     pass
-    tile.clear()
+
+#Tiles dictionary is updated so that the tiles that actually exist in the grid are in the dictionary and drawn to show the tiles moving
+def update_tiles(window, tiles, sorted_tiles):
+    tiles.clear()
     for tile in sorted_tiles:
-        tiles[f"{tile.row}{tile.col}"] = Tile(2, row, col)       
+        tiles[f"{tile.row}{tile.col}"] = tile
+
+    draw(window, tiles)       
                 
 
 
@@ -244,7 +262,17 @@ def main(window):
             if event.type == pygame.QUIT:
                 run = False
                 break
-        
+            #Checking if a key is pressed down and if it's one of the arrow keys then the tiles will move if possible
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    mov_tiles(window, tiles, clock, "left")
+                elif event.key == pygame.K_RIGHT:
+                    mov_tiles(window, tiles, clock, "right")
+                elif event.key == pygame.K_UP:
+                    mov_tiles(window, tiles, clock, "up")
+                elif event.key == pygame.K_DOWN:
+                    mov_tiles(window, tiles, clock, "down")
+
         draw(window, tiles)
     #Quits the game if the user closes the window
     pygame.quit()
