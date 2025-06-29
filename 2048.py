@@ -257,15 +257,12 @@ def mov_tiles(window, tiles, clock, direction):
 #This function is called at the end of each move to check if the game is over
 def end_move(tiles):
     if len(tiles) == 16:
-        #load_lost_screen(WINDOW)
         return "Lost"
     else:
         row, col = gen_random_position(tiles)
         tiles[f"{row}{col}"] = Tile(random.choice([2,4]), row, col)
         return "continue"
 
-def load_lost_screen(window):
-    pass
 
 #Tiles dictionary is updated so that the tiles that actually exist in the grid are in the dictionary and drawn to show the tiles moving
 def update_tiles(window, tiles, sorted_tiles):
@@ -275,8 +272,6 @@ def update_tiles(window, tiles, sorted_tiles):
 
     draw(window, tiles)       
                 
-
-
 
 #Main game loop
 def main(window):
