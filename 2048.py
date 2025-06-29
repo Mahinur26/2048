@@ -32,8 +32,17 @@ FONT = pygame.font.SysFont("comicsans", 50, bold=True)
 MOVE_VELOCITY = 20
 
 #High score is saved locally in a text file and if the score is higher than the high score, it is updated
-def draw_score(window, high_score):
-    pass
+def save_high_score(score):
+    try:
+        with open("high_score.txt", "r") as file:
+            high_score = int(file.read().strip())
+    except (FileNotFoundError, ValueError):
+        high_score = 0
+    if score > high_score:
+        with open("high_score.txt", "w") as file:
+            file.write(str(score))
+        return score
+    return high_score
 
 class Tile:
     #Colors for each tile value, starting from values 2 to 2048
@@ -75,12 +84,7 @@ class Tile:
         window.blit(text, (self.x + (RECT_WIDTH / 2 - text.get_width() / 2), self.y + (RECT_HEIGHT / 2 - text.get_height() / 2)))
 
 
-
-#LOOK BACK AT THIS
-#LOOK BACK AT THIS
-#LOOK BACK AT THIS
-#LOOK BACK AT THIS
-#LOOK BACK AT THIS
+    #Sets the position of the tile in the grid based on its x and y coordinates
     def set_position(self, ceil=False):
         if ceil:
             #Rounds up the value 
@@ -170,16 +174,43 @@ def mov_tiles(window, tiles, clock, direction):
         #this lambda function will return False as soon as the border of the tile is reached
         move_check = lambda tile, next_tile: tile.x > next_tile.x + RECT_WIDTH + MOVE_VELOCITY
         ceil = True
+
+    #Essentially the same as the left movement, but signs and inequalities are reversed as needed to make the movement to the right
     elif direction == "right":
-        pass
-        #If col is 3, then it can't move right
-        boundary_check = lambda tile: tile.col == 3
-        get_next_tile = lambda tile: tiles.get(f"{tile.row}{tile.col +1}")
+        sort_func = lambda x: x.col
+        reverse = True
+        #Moving in positive x direction since we are moving right
+        delta = (MOVE_VELOCITY,0)
+        #If at the last col, then it can't move right, 
+        #and the x position of the tile to the right can't be beyond the boundary of the grid
+        boundary_check = lambda tile: tile.col == COLS - 1 and tile.x >= GRID_X + (COLS - 1) * RECT_WIDTH
+        #col + 1 because the next tile will be on the right
+        get_next_tile = lambda tile: tiles.get(f"{tile.row}{tile.col + 1}")
+        merge_check = lambda tile, next_tile: tile.x < next_tile.x - MOVE_VELOCITY
+        move_check = lambda tile, next_tile: tile.x + RECT_WIDTH + MOVE_VELOCITY < next_tile.x 
+        ceil = False
         
+    #Code is pretty much the same as the left movement, but anything done to col is changed to row and tile.y is utilized
     elif direction == "up":
-        pass
+        sort_func = lambda x: x.row
+        reverse = False
+        delta = (0,-MOVE_VELOCITY)
+        boundary_check = lambda tile: tile.row == 0 and tile.y <= GRID_Y
+        get_next_tile = lambda tile: tiles.get(f"{tile.row-1}{tile.col}")
+        merge_check = lambda tile, next_tile: tile.y > next_tile.y + MOVE_VELOCITY
+        move_check = lambda tile, next_tile: tile.y > next_tile.y + RECT_HEIGHT + MOVE_VELOCITY
+        ceil = True
+
+    #Code is pretty much the same as the right movement, but anything done to col is changed to row and tile.y is utilized
     elif direction == "down":
-        pass
+        sort_func = lambda x: x.row
+        reverse = True
+        delta = (0,MOVE_VELOCITY)
+        boundary_check = lambda tile: tile.row == ROWS - 1 and tile.y >= GRID_Y + (ROWS - 1) * RECT_HEIGHT
+        get_next_tile = lambda tile: tiles.get(f"{tile.row + 1}{tile.col}")
+        merge_check = lambda tile, next_tile: tile.y < next_tile.y - MOVE_VELOCITY
+        move_check = lambda tile, next_tile: tile.y + RECT_HEIGHT + MOVE_VELOCITY < next_tile.y 
+        ceil = False
 
     while updated:
         clock.tick(FPS)
@@ -223,6 +254,7 @@ def mov_tiles(window, tiles, clock, direction):
         update_tiles(window, tiles, sorted_tiles)
     end_move(tiles)
 
+#This function is called at the end of each move to check if the game is over
 def end_move(tiles):
     if len(tiles) == 16:
         #load_lost_screen(WINDOW)
