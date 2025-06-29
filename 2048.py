@@ -31,19 +31,6 @@ pygame.display.set_caption("2048")
 FONT = pygame.font.SysFont("comicsans", 50, bold=True)
 MOVE_VELOCITY = 20
 
-#High score is saved locally in a text file and if the score is higher than the high score, it is updated
-def save_high_score(score):
-    try:
-        with open("high_score.txt", "r") as file:
-            high_score = int(file.read().strip())
-    except (FileNotFoundError, ValueError):
-        high_score = 0
-    if score > high_score:
-        with open("high_score.txt", "w") as file:
-            file.write(str(score))
-        return score
-    return high_score
-
 class Tile:
     #Colors for each tile value, starting from values 2 to 2048
     COLORS = [
